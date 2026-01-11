@@ -56,7 +56,31 @@ export const visionFields: INodeProperties[] = [
 		required: true,
 		description: '选择要使用的视觉模型',
 	},
-	// 图像URL
+	{
+		displayName: 'Image Source',
+		name: 'imageSource',
+		type: 'options',
+		displayOptions: {
+			show: {
+				resource: ['vision'],
+				operation: ['visionChat'],
+			},
+		},
+		options: [
+			{
+				name: 'Image URL',
+				value: 'url',
+				description: '通过URL提供图片',
+			},
+			{
+				name: 'Binary',
+				value: 'binary',
+				description: '从输入数据的binary属性读取图片',
+			},
+		],
+		default: 'url',
+		required: true,
+	},
 	{
 		displayName: 'Image URL',
 		name: 'imageUrl',
@@ -65,12 +89,28 @@ export const visionFields: INodeProperties[] = [
 			show: {
 				resource: ['vision'],
 				operation: ['visionChat'],
+				imageSource: ['url'],
 			},
 		},
 		default: '',
 		required: true,
 		description: '要分析的图像URL地址',
 		placeholder: 'https://example.com/image.jpg',
+	},
+	{
+		displayName: 'Binary Property',
+		name: 'binaryPropertyName',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: ['vision'],
+				operation: ['visionChat'],
+				imageSource: ['binary'],
+			},
+		},
+		default: 'data',
+		required: true,
+		description: '包含图片的binary字段名，例如 data',
 	},
 	// 提示词
 	{
