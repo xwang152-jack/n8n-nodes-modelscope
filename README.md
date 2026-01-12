@@ -168,6 +168,9 @@ ModelScope Chat Model 节点专为 n8n AI 工作流设计，可与 AI Agent 和 
   - ZhipuAI/GLM-4.7
 - **DeepSeek 系列**:
   - deepseek-ai/DeepSeek-V3.2
+  - deepseek-ai/DeepSeek-R1-0528
+- **XiaomiMiMo 系列**:
+  - XiaomiMiMo/MiMo-V2-Flash
 - **Qwen 系列**:
   - Qwen/Qwen3-235B-A22B-Instruct-2507
   - Qwen/Qwen3-235B-A22B-Thinking-2507
@@ -184,6 +187,7 @@ ModelScope Chat Model 节点专为 n8n AI 工作流设计，可与 AI Agent 和 
 ### 文生图模型 (Image)
 - Qwen/Qwen-Image
 - Qwen/Qwen-Image-2512
+- Tongyi-MAI/Z-Image-Turbo
 - 更多模型持续更新中...
 
 ## 使用限制
