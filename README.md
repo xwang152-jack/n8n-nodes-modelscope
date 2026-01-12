@@ -3,7 +3,7 @@
 [![npm version](https://badge.fury.io/js/n8n-nodes-modelscope.svg)](https://badge.fury.io/js/n8n-nodes-modelscope)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-这是一个用于 [n8n](https://n8n.io/) 的 ModelScope API 集成节点包，提供双节点架构支持大语言模型、视觉模型、文生图与向量化（Embedding）模型的调用，以及 AI Agent/Chain 集成功能。
+这是一个用于 [n8n](https://n8n.io/) 的 ModelScope API 集成节点包，提供双节点架构支持大语言模型、视觉模型、文生图模型的调用，以及 AI Agent/Chain 集成功能。
 
 ## 节点架构
 
@@ -14,7 +14,6 @@
 - 🤖 **大语言模型 (LLM)**: 支持对话完成，包括 Qwen、GLM、DeepSeek 等主流模型
 - 👁️ **视觉模型 (Vision)**: 支持图像理解和视觉问答
 - 🎨 **文生图模型 (Image)**: 支持文本到图像的生成，包括 Qwen-Image 等模型
-- 📈 **向量化模型 (Embedding)**: 支持文本向量生成，现已集成 Qwen/Qwen3-Embedding-8B，并支持批量输入
 - ⚡ **异步处理**: 支持文生图任务的异步处理和状态轮询
 
 ### 🔗 ModelScope Chat Model 节点
@@ -70,7 +69,7 @@ npm install n8n-nodes-modelscope
 
 支持与大语言模型进行对话：
 
-- **模型选择**: ZhipuAI/GLM-4.6、deepseek-ai/DeepSeek-V3.1、Qwen/Qwen3-235B-A22B-Instruct-2507 等
+- **模型选择**: ZhipuAI/GLM-4.7、deepseek-ai/DeepSeek-V3.2、Qwen/Qwen3-235B-A22B-Instruct-2507 等
 - **消息模板**: 自定义、代码生成、文本分析、翻译等预设模板
 - **参数配置**: 温度、最大令牌数、流式输出等
 
@@ -79,7 +78,7 @@ npm install n8n-nodes-modelscope
 {
   "resource": "llm",
   "operation": "chatCompletion",
-  "model": "ZhipuAI/GLM-4.6",
+  "model": "ZhipuAI/GLM-4.7",
   "messages": [
     {
       "role": "user",
@@ -116,7 +115,7 @@ npm install n8n-nodes-modelscope
 
 支持根据文本描述生成图像：
 
-- **模型选择**: Qwen/Qwen-Image 等
+- **模型选择**: Qwen/Qwen-Image、Qwen/Qwen-Image-2512 等
 - **提示词**: 支持正面和负面提示词
 - **图像配置**: 多种尺寸选择、生成步数调节
 - **异步处理**: 自动处理异步任务和状态轮询
@@ -126,48 +125,12 @@ npm install n8n-nodes-modelscope
 {
   "resource": "image",
   "operation": "textToImage",
-  "model": "Qwen/Qwen-Image",
+  "model": "Qwen/Qwen-Image-2512",
   "prompt": "一只可爱的小猫坐在花园里，阳光明媚，高质量，4K",
   "negativePrompt": "blurry, low quality, distorted",
   "size": "1024x1024",
   "steps": 30,
   "timeout": 5
-}
-```
-
-#### 向量化模型 (Embedding)
-
-支持将文本生成向量，可用于检索/存储/RAG 等场景：
-
-- **模型选择**: Qwen/Qwen3-Embedding-8B
-- **编码格式**: `float`（返回数值数组，适合直接检索/入库）或 `base64`（压缩传输/存档）
-- **批量模式**: 开启 `Batch Mode` 后可一次处理多条文本，输出的 `data` 与输入顺序一一对应
-
-**单条示例配置**:
-```json
-{
-  "resource": "embedding",
-  "operation": "createEmbedding",
-  "model": "Qwen/Qwen3-Embedding-8B",
-  "input": "你好",
-  "encodingFormat": "float"
-}
-```
-
-**批量示例配置**:
-```json
-{
-  "resource": "embedding",
-  "operation": "createEmbedding",
-  "model": "Qwen/Qwen3-Embedding-8B",
-  "batch": true,
-  "inputs": {
-    "item": [
-      { "text": "你好" },
-      { "text": "世界" }
-    ]
-  },
-  "encodingFormat": "float"
 }
 ```
 
@@ -198,32 +161,13 @@ ModelScope Chat Model 节点专为 n8n AI 工作流设计，可与 AI Agent 和 
 - **响应格式**: 文本或 JSON 格式
 - **推理努力**: 控制模型推理深度 (低/中/高)
 
-#### Embedding Pipeline 模式
-
-该节点新增 `Mode` 选择：
-
-- **Chat Model**: 输出 `Model`（语言模型）
-- **Embedding Pipeline**: 输出 `Chain`（包含向量管道）
-
-在 `Embedding Pipeline` 下：
-- **Embeddings Model**: 选择 `Qwen/Qwen3-Embedding-8B`
-- **Options/Top K**: 设置近邻数量（默认 5）
-- 输出 `Chain` 对象包含 `vectorStore` 与 `embeddings`，可在下游执行：
-  - 入库：`await chain.vectorStore.addTexts(["文本1","文本2"])`
-  - 检索：`const hits = await chain.vectorStore.similaritySearch("查询语句", chain.topK)`
-
 ## 支持的模型
 
 ### 大语言模型 (LLM)
 - **ZhipuAI 系列**:
-  - ZhipuAI/GLM-4.6
-  - ZhipuAI/GLM-4.5
+  - ZhipuAI/GLM-4.7
 - **DeepSeek 系列**:
-  - deepseek-ai/DeepSeek-V3.2-Exp
-  - deepseek-ai/DeepSeek-V3.1
-  - deepseek-ai/DeepSeek-R1-0528
-- **MiniMax 系列**:
-  - MiniMax/MiniMax-M2
+  - deepseek-ai/DeepSeek-V3.2
 - **Qwen 系列**:
   - Qwen/Qwen3-235B-A22B-Instruct-2507
   - Qwen/Qwen3-235B-A22B-Thinking-2507
@@ -239,10 +183,7 @@ ModelScope Chat Model 节点专为 n8n AI 工作流设计，可与 AI Agent 和 
 
 ### 文生图模型 (Image)
 - Qwen/Qwen-Image
-- 更多模型持续更新中...
-
-### 向量化模型 (Embedding)
-- Qwen/Qwen3-Embedding-8B
+- Qwen/Qwen-Image-2512
 - 更多模型持续更新中...
 
 ## 使用限制
@@ -296,8 +237,7 @@ n8n-nodes-modelscope/
 │   │   └── resources/
 │   │       ├── llm/                    # 大语言模型资源
 │   │       ├── vision/                 # 视觉模型资源
-│   │       ├── image/                  # 图像生成资源
-│   │       └── embedding/              # 向量化资源
+│   │       └── image/                  # 图像生成资源
 │   └── ModelScopeChain/                # AI Agent/Chain 集成节点
 │       ├── ModelScopeChain.node.ts     # Chat Model 节点文件
 │       └── utils/

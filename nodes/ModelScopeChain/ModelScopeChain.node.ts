@@ -8,8 +8,7 @@ import type {
 import { NodeOperationError } from 'n8n-workflow';
 
 import { NodeConnectionTypes } from 'n8n-workflow';
-import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
-import { MemoryVectorStore } from 'langchain/vectorstores/memory';
+import { ChatOpenAI } from '@langchain/openai';
 import { getConnectionHintNoticeField } from './methods/sharedFields';
 import { N8nLlmTracing } from '../N8nLlmTracing';
 import { MODELSCOPE_BASE_URL } from '../ModelScope/utils/constants';
@@ -63,7 +62,6 @@ export class ModelScopeChain implements INodeType {
 				default: 'chat',
                 options: [
 					{ name: 'Chat Model', value: 'chat' },
-					{ name: 'Embedding Pipeline', value: 'embedding' },
 				],
 			},
 			{
@@ -73,11 +71,6 @@ export class ModelScopeChain implements INodeType {
 				default: { mode: 'list', value: 'qwen/Qwen2.5-72B-Instruct' },
 				required: true,
 				description: 'The model which will generate the completion',
-				displayOptions: {
-					show: {
-						mode: ['chat'],
-					},
-				},
 				modes: [
 					{
 						displayName: 'Model',
@@ -96,19 +89,6 @@ export class ModelScopeChain implements INodeType {
 						placeholder: 'qwen/Qwen2.5-72B-Instruct',
 					},
 				],
-			},
-			{
-				displayName: 'Embeddings Model',
-				name: 'embeddingsModel',
-				type: 'string',
-				default: 'Qwen/Qwen3-Embedding-8B',
-				required: true,
-				description: 'Model used to generate embeddings',
-				displayOptions: {
-					show: {
-						mode: ['embedding'],
-					},
-				},
 			},
 			{
 				displayName: 'Options',
@@ -133,11 +113,6 @@ export class ModelScopeChain implements INodeType {
 						description:
 							'Positive values penalize new tokens based on their existing frequency in the text so far',
 						type: 'number',
-						displayOptions: {
-							show: {
-								'/mode': ['chat'],
-							},
-						},
 					},
 					{
 						displayName: 'Max Retries',
@@ -145,11 +120,6 @@ export class ModelScopeChain implements INodeType {
 						default: 2,
 						description: 'Maximum number of retries to make when generating',
 						type: 'number',
-						displayOptions: {
-							show: {
-								'/mode': ['chat'],
-							},
-						},
 					},
 					{
 						displayName: 'Maximum Number of Tokens',
@@ -161,11 +131,6 @@ export class ModelScopeChain implements INodeType {
 						typeOptions: {
 							minValue: -1,
 						},
-						displayOptions: {
-							show: {
-								'/mode': ['chat'],
-							},
-						},
 					},
 					{
 						displayName: 'Presence Penalty',
@@ -175,11 +140,6 @@ export class ModelScopeChain implements INodeType {
 						description:
 							'Positive values penalize new tokens based on whether they appear in the text so far',
 						type: 'number',
-						displayOptions: {
-							show: {
-								'/mode': ['chat'],
-							},
-						},
 					},
 					{
 						displayName: 'Reasoning Effort',
@@ -201,11 +161,6 @@ export class ModelScopeChain implements INodeType {
 								value: 'high',
 							},
 						],
-						displayOptions: {
-							show: {
-								'/mode': ['chat'],
-							},
-						},
 					},
                     {
                         displayName: 'Response Format',
@@ -223,11 +178,6 @@ export class ModelScopeChain implements INodeType {
                                 value: 'json_object',
                             },
                         ],
-                        displayOptions: {
-                            show: {
-                                '/mode': ['chat'],
-                            },
-                        },
                     },
 					{
 						displayName: 'Sampling Temperature',
@@ -237,11 +187,6 @@ export class ModelScopeChain implements INodeType {
 						description:
 							'Controls randomness: Lowering results in less random completions. As the temperature approaches zero, the model will become deterministic and repetitive.',
 						type: 'number',
-						displayOptions: {
-							show: {
-								'/mode': ['chat'],
-							},
-						},
 					},
                     {
                         displayName: 'Timeout',
@@ -260,24 +205,7 @@ export class ModelScopeChain implements INodeType {
                             { name: 'Auto', value: 'auto' },
                             { name: 'None', value: 'none' },
                         ],
-                        displayOptions: {
-                            show: {
-                                '/mode': ['chat'],
-                            },
-                        },
                     },
-					{
-						displayName: 'Top K',
-						name: 'topK',
-						default: 5,
-						description: 'Number of nearest neighbors to return',
-						type: 'number',
-						displayOptions: {
-							show: {
-								'/mode': ['embedding'],
-							},
-						},
-					},
 					{
 						displayName: 'Top P',
 						name: 'topP',
@@ -286,11 +214,6 @@ export class ModelScopeChain implements INodeType {
 						description:
 							'Controls diversity via nucleus sampling: 0.5 means half of all likelihood-weighted options are considered. We generally recommend altering this or temperature but not both.',
 						type: 'number',
-						displayOptions: {
-							show: {
-								'/mode': ['chat'],
-							},
-						},
 					},
 				],
 			},
@@ -311,7 +234,6 @@ export class ModelScopeChain implements INodeType {
 
     async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
         const credentials = await this.getCredentials('modelScopeApi');
-        const mode = this.getNodeParameter('mode', itemIndex, 'chat') as 'chat' | 'embedding';
 
         if (!credentials?.accessToken || !String(credentials.accessToken).trim()) {
             throw new NodeOperationError(this.getNode(), '未配置 ModelScope Access Token，请在凭据中填写并绑定节点');
@@ -328,32 +250,8 @@ export class ModelScopeChain implements INodeType {
 			temperature?: number;
 			timeout?: number;
 			topP?: number;
-			topK?: number;
             toolChoice?: 'auto' | 'none';
 		};
-
-        if (mode === 'embedding') {
-            const embeddingsModel = this.getNodeParameter('embeddingsModel', itemIndex) as string;
-            const embeddings = new OpenAIEmbeddings({
-                apiKey: credentials.accessToken as string,
-                // 兼容不同版本的字段名
-                // @ts-ignore
-                openAIApiKey: credentials.accessToken as string,
-                model: embeddingsModel,
-                configuration: {
-                    baseURL: options.baseURL || MODELSCOPE_BASE_URL,
-                },
-            });
-			const vectorStore = new MemoryVectorStore(embeddings);
-			const chain: any = {
-				vectorStore,
-				embeddings,
-				topK: options.topK ?? 5,
-			};
-			return {
-				response: chain,
-			};
-		}
 
 		const modelName = this.getNodeParameter('model', itemIndex, '', { extractValue: true }) as string;
 

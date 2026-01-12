@@ -2,10 +2,7 @@
 export const SUPPORTED_MODELS = {
 	llm: [
 		'ZhipuAI/GLM-4.7',
-		'ZhipuAI/GLM-4.6',
-		'XiaomiMiMo/MiMo-V2-Flash',
 		'deepseek-ai/DeepSeek-V3.2',
-		'deepseek-ai/DeepSeek-R1-0528',
 		'Qwen/Qwen3-235B-A22B-Instruct-2507',
 		'Qwen/Qwen3-235B-A22B-Thinking-2507',
 		'Qwen/Qwen3-Next-80B-A3B-Instruct',
@@ -17,11 +14,8 @@ export const SUPPORTED_MODELS = {
 		'Qwen/Qwen3-VL-30B-A3B-Instruct',
 	],
 	image: [
-		'Tongyi-MAI/Z-Image-Turbo',
 		'Qwen/Qwen-Image',
-	],
-	embedding: [
-		'Qwen/Qwen3-Embedding-8B',
+		'Qwen/Qwen-Image-2512',
 	],
 };
 
