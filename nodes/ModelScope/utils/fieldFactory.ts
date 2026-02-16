@@ -36,12 +36,13 @@ export class FieldFactory {
 		defaultValue?: string
 	): INodeProperties {
 		const models = SUPPORTED_MODELS[modelType];
+		const defaultModel = defaultValue || models[0] as string;
 
 		return {
 			displayName,
 			name: 'model',
 			type: 'options',
-			default: defaultValue || models[0] as string,
+			default: defaultModel,
 			displayOptions: {
 				show: {
 					resource: [modelType],
