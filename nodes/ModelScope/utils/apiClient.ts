@@ -1,7 +1,12 @@
 import { OpenAI } from 'openai';
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
-import { MODELSCOPE_BASE_URL } from './constants';
+import { API_CONFIG, ERROR_MESSAGES } from './constants';
 import { ModelScopeErrorHandler } from './errorHandler';
+import type {
+	ModelScopeChatCompletionRequest,
+	ModelScopeImageGenerationRequest,
+	ModelScopeImageGenerationResponse,
+	ModelScopeTaskStatusResponse,
+} from '../types/api.types';
 
 export class ModelScopeClient {
     private client?: OpenAI;
@@ -13,12 +18,13 @@ export class ModelScopeClient {
 
     private getOpenAIClient() {
         if (!this.accessToken || !this.accessToken.trim()) {
-            throw new Error('认证失败: Access Token 为空，请在凭据中配置 ModelScope Token');
+            throw new Error(ERROR_MESSAGES.EMPTY_TOKEN);
         }
         if (!this.client) {
             this.client = new OpenAI({
                 apiKey: this.accessToken,
-                baseURL: MODELSCOPE_BASE_URL,
+                baseURL: API_CONFIG.BASE_URL,
+                timeout: API_CONFIG.TIMEOUTS.DEFAULT_REQUEST_MS,
             });
         }
         return this.client;
@@ -26,102 +32,108 @@ export class ModelScopeClient {
 
     private ensureAccessToken() {
         if (!this.accessToken || !this.accessToken.trim()) {
-            throw new Error('认证失败: 未配置 ModelScope Access Token，请在凭据中填写并绑定节点');
+            throw new Error(ERROR_MESSAGES.EMPTY_TOKEN);
         }
     }
 
-	async chatCompletion(params: {
-		model: string;
-		messages: ChatCompletionMessageParam[];
-		stream?: boolean;
-		temperature?: number;
-		max_tokens?: number;
-	}) {
+	/**
+	 * Chat completion using OpenAI SDK
+	 */
+	async chatCompletion(params: ModelScopeChatCompletionRequest): Promise<any> {
         try {
             const client = this.getOpenAIClient();
             return await client.chat.completions.create(params);
-        } catch (error: any) {
+        } catch (error: unknown) {
             throw ModelScopeErrorHandler.handleApiError(error);
         }
     }
 
-    async generateImage(params: {
-        model: string;
-        prompt: string;
-        negative_prompt?: string;
-        size?: string;
-        num_inference_steps?: number;
-        guidance_scale?: number;
-    }) {
+	/**
+	 * Generate image using ModelScope API
+	 * Returns a task ID for async processing
+	 */
+	async generateImage(params: ModelScopeImageGenerationRequest, timeoutMs: number = API_CONFIG.TIMEOUTS.DEFAULT_REQUEST_MS): Promise<ModelScopeImageGenerationResponse> {
         this.ensureAccessToken();
-		// 构建请求参数
-		const requestParams: any = {
+
+		// Build request parameters
+		const requestParams: ModelScopeImageGenerationRequest = {
 			model: params.model,
 			prompt: params.prompt,
+			negative_prompt: params.negative_prompt,
+			size: params.size,
+			num_inference_steps: params.num_inference_steps,
+			guidance_scale: params.guidance_scale,
 		};
 
-		// 添加可选参数
-		if (params.negative_prompt) {
-			requestParams.negative_prompt = params.negative_prompt;
-		}
-		
-		if (params.size) {
-			requestParams.size = params.size;
-		}
-		
-		if (params.num_inference_steps) {
-			requestParams.num_inference_steps = params.num_inference_steps;
-		}
-		
-		if (params.guidance_scale) {
-			requestParams.guidance_scale = params.guidance_scale;
-		}
+		// Create abort controller for timeout
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-        const response = await fetch(`${MODELSCOPE_BASE_URL}/images/generations`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${this.accessToken}`,
-                'Content-Type': 'application/json',
-                'X-ModelScope-Async-Mode': 'true',
-            },
-            body: JSON.stringify(requestParams),
-        });
+		try {
+			const response = await fetch(`${API_CONFIG.BASE_URL}/images/generations`, {
+				method: 'POST',
+				headers: {
+					'Authorization': `${API_CONFIG.HEADERS.AUTHORIZATION_PREFIX}${this.accessToken}`,
+					'Content-Type': API_CONFIG.HEADERS.CONTENT_TYPE,
+					'X-ModelScope-Async-Mode': API_CONFIG.HEADERS.X_ASYNC_MODE,
+				},
+				body: JSON.stringify(requestParams),
+				signal: controller.signal,
+			});
 
-		if (!response.ok) {
-			let errorMessage = response.statusText;
-			try {
-				const errorData = await response.json() as any;
-				errorMessage = errorData.error?.message || errorData.message || errorMessage;
-			} catch (e) {
-				// If response body is not JSON, use status text
+			clearTimeout(timeoutId);
+
+			if (!response.ok) {
+				await ModelScopeErrorHandler.handleHttpResponse(response, 'Image Generation');
 			}
-			throw new Error(`ModelScope Image API Error: ${response.status} - ${errorMessage}`);
+
+			return await response.json();
+		} catch (error: unknown) {
+			clearTimeout(timeoutId);
+
+			if ((error as Error).name === 'AbortError') {
+				throw new Error(ERROR_MESSAGES.TASK_TIMEOUT + ` (${timeoutMs}ms)`);
+			}
+
+			throw ModelScopeErrorHandler.handleApiError(error);
 		}
+    }
 
-		return await response.json();
-	}
-
-    async getTaskStatus(taskId: string) {
+	/**
+	 * Get task status for async image generation
+	 */
+	async getTaskStatus(taskId: string, timeoutMs: number = API_CONFIG.TIMEOUTS.DEFAULT_REQUEST_MS): Promise<ModelScopeTaskStatusResponse> {
         this.ensureAccessToken();
-        const response = await fetch(`${MODELSCOPE_BASE_URL}/tasks/${taskId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${this.accessToken}`,
-                'X-ModelScope-Task-Type': 'image_generation',
-            },
-        });
 
-		if (!response.ok) {
-			let errorMessage = response.statusText;
-			try {
-				const errorData = await response.json() as any;
-				errorMessage = errorData.error?.message || errorData.message || errorMessage;
-			} catch (e) {
-				// If response body is not JSON, use status text
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+		try {
+			const response = await fetch(`${API_CONFIG.BASE_URL}/tasks/${taskId}`, {
+				method: 'GET',
+				headers: {
+					'Authorization': `${API_CONFIG.HEADERS.AUTHORIZATION_PREFIX}${this.accessToken}`,
+					'Content-Type': API_CONFIG.HEADERS.CONTENT_TYPE,
+					'X-ModelScope-Task-Type': API_CONFIG.HEADERS.X_TASK_TYPE_IMAGE_GENERATION,
+				},
+				signal: controller.signal,
+			});
+
+			clearTimeout(timeoutId);
+
+			if (!response.ok) {
+				await ModelScopeErrorHandler.handleHttpResponse(response, 'Task Status');
 			}
-			throw new Error(`ModelScope Task API Error: ${response.status} - ${errorMessage}`);
-		}
 
-		return await response.json();
-	}
+			return await response.json();
+		} catch (error: unknown) {
+			clearTimeout(timeoutId);
+
+			if ((error as Error).name === 'AbortError') {
+				throw new Error(ERROR_MESSAGES.TASK_TIMEOUT + ` (${timeoutMs}ms)`);
+			}
+
+			throw ModelScopeErrorHandler.handleApiError(error);
+		}
+    }
 }

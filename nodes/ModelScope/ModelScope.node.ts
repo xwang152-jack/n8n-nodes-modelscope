@@ -133,7 +133,7 @@ export class ModelScope implements INodeType {
 				}
 
 				const executionData = this.helpers.constructExecutionMetaData(
-					this.helpers.returnJsonArray(responseData),
+					this.helpers.returnJsonArray(responseData as any),
 					{ itemData: { item: i } },
 				);
 

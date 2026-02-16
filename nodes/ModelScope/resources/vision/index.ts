@@ -1,5 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
-import { getModelOptions } from '../../utils/constants';
+import { FieldFactory } from '../../utils/fieldFactory';
+import { ModelType } from '../../utils/constants';
 
 export const visionOperations: INodeProperties[] = [
 	{
@@ -25,37 +26,13 @@ export const visionOperations: INodeProperties[] = [
 ];
 
 export const visionFields: INodeProperties[] = [
-	// 使用限制提醒
-	{
-		displayName: 'Usage Notice',
-		name: 'usageNotice',
-		type: 'notice',
-		default: '',
-		displayOptions: {
-			show: {
-				resource: ['vision'],
-			},
-		},
-		typeOptions: {
-			theme: 'info',
-		},
-	} as any,
-	// 模型选择
-	{
-		displayName: 'Model',
-		name: 'model',
-		type: 'options',
-		displayOptions: {
-			show: {
-				resource: ['vision'],
-				operation: ['visionChat'],
-			},
-		},
-		options: getModelOptions('vision'),
-		default: 'Qwen/Qwen3-VL-30B-A3B-Instruct',
-		required: true,
-		description: '选择要使用的视觉模型',
-	},
+	// Usage notice
+	FieldFactory.createUsageNoticeField('info', { show: { resource: ['vision'] } }),
+
+	// Model selection
+	FieldFactory.createModelField(ModelType.VISION, 'visionChat', 'Model', 'Qwen/Qwen3-VL-30B-A3B-Instruct'),
+
+	// Image source selector
 	{
 		displayName: 'Image Source',
 		name: 'imageSource',
@@ -81,6 +58,8 @@ export const visionFields: INodeProperties[] = [
 		default: 'url',
 		required: true,
 	},
+
+	// Image URL field (conditional)
 	{
 		displayName: 'Image URL',
 		name: 'imageUrl',
@@ -97,6 +76,8 @@ export const visionFields: INodeProperties[] = [
 		description: '要分析的图像URL地址',
 		placeholder: 'https://example.com/image.jpg',
 	},
+
+	// Binary property field (conditional)
 	{
 		displayName: 'Binary Property',
 		name: 'binaryPropertyName',
@@ -112,7 +93,8 @@ export const visionFields: INodeProperties[] = [
 		required: true,
 		description: '包含图片的binary字段名，例如 data',
 	},
-	// 提示词
+
+	// Prompt field
 	{
 		displayName: 'Prompt',
 		name: 'prompt',
@@ -130,41 +112,10 @@ export const visionFields: INodeProperties[] = [
 		required: true,
 		description: '对图像的提问或指令',
 	},
-	// 温度参数
-	{
-		displayName: 'Temperature',
-		name: 'temperature',
-		type: 'number',
-		displayOptions: {
-			show: {
-				resource: ['vision'],
-				operation: ['visionChat'],
-			},
-		},
-		default: 0.7,
-		typeOptions: {
-			minValue: 0,
-			maxValue: 2,
-			numberStepSize: 0.1,
-		},
-		description: '控制输出的随机性，范围0-2',
-	},
-	// 最大令牌数
-	{
-		displayName: 'Max Tokens',
-		name: 'maxTokens',
-		type: 'number',
-		displayOptions: {
-			show: {
-				resource: ['vision'],
-				operation: ['visionChat'],
-			},
-		},
-		default: 2048,
-		typeOptions: {
-			minValue: 1,
-			maxValue: 8192,
-		},
-		description: '生成的最大令牌数',
-	},
+
+	// Temperature
+	FieldFactory.createTemperatureField(ModelType.VISION, 'visionChat', 0.7),
+
+	// Max tokens
+	FieldFactory.createMaxTokensField(ModelType.VISION, 'visionChat', 2048),
 ];
