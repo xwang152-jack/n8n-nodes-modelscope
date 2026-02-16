@@ -68,7 +68,7 @@ export class ModelScopeChain implements INodeType {
 				displayName: 'Model',
 				name: 'model',
 				type: 'resourceLocator',
-				default: { mode: 'list', value: 'qwen/Qwen2.5-72B-Instruct' },
+				default: { mode: 'list', value: 'ZhipuAI/GLM-5' },
 				required: true,
 				description: 'The model which will generate the completion',
 				modes: [
@@ -86,7 +86,7 @@ export class ModelScopeChain implements INodeType {
 						displayName: 'ID',
 						name: 'id',
 						type: 'string',
-						placeholder: 'qwen/Qwen2.5-72B-Instruct',
+						placeholder: 'ZhipuAI/GLM-5',
 					},
 				],
 			},

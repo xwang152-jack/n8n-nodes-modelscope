@@ -52,7 +52,7 @@ export const llmFields: INodeProperties[] = [
 			},
 		},
 		options: getModelOptions('llm'),
-		default: 'ZhipuAI/GLM-4.7',
+		default: 'ZhipuAI/GLM-5',
 		required: true,
 		description: '选择要使用的大语言模型',
 	},

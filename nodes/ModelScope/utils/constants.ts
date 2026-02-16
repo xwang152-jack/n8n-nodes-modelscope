@@ -1,7 +1,11 @@
 // 支持的模型列表
 export const SUPPORTED_MODELS = {
 	llm: [
-		'ZhipuAI/GLM-4.7',
+		'ZhipuAI/GLM-5',
+		'MiniMax/MiniMax-M2.5',
+		'moonshotai/Kimi-K2.5',
+		'Qwen/Qwen3.5-397B-A17B',
+		'ZhipuAI/GLM-4.7-Flash',
 		'deepseek-ai/DeepSeek-V3.2',
 		'deepseek-ai/DeepSeek-R1-0528',
 		'XiaomiMiMo/MiMo-V2-Flash',
