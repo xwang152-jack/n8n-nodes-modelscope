@@ -30,7 +30,7 @@ export const visionFields: INodeProperties[] = [
 	FieldFactory.createUsageNoticeField('info', { show: { resource: ['vision'] } }),
 
 	// Model selection
-	FieldFactory.createModelField(ModelType.VISION, 'visionChat', 'Model', 'Qwen/Qwen3-VL-30B-A3B-Instruct'),
+	FieldFactory.createModelField(ModelType.VISION, 'visionChat', 'Model', 'Qwen/Qwen3.8-Flash-Next'),
 
 	// Image source selector
 	{

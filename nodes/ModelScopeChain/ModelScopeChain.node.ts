@@ -68,7 +68,7 @@ export class ModelScopeChain implements INodeType {
 				displayName: 'Model',
 				name: 'model',
 				type: 'resourceLocator',
-				default: { mode: 'list', value: 'ZhipuAI/GLM-5' },
+				default: { mode: 'list', value: 'ZhipuAI/GLM-5.2' },
 				required: true,
 				description: 'The model which will generate the completion',
 				modes: [
@@ -86,7 +86,7 @@ export class ModelScopeChain implements INodeType {
 						displayName: 'ID',
 						name: 'id',
 						type: 'string',
-						placeholder: 'ZhipuAI/GLM-5',
+						placeholder: 'ZhipuAI/GLM-5.2',
 					},
 				],
 			},

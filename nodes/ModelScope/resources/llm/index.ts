@@ -30,7 +30,7 @@ export const llmFields: INodeProperties[] = [
 	FieldFactory.createUsageNoticeField('info', { show: { resource: ['llm'] } }),
 
 	// Model selection
-	FieldFactory.createModelField(ModelType.LLM, 'chatCompletion', 'Model', 'ZhipuAI/GLM-5'),
+	FieldFactory.createModelField(ModelType.LLM, 'chatCompletion', 'Model', 'ZhipuAI/GLM-5.2'),
 
 	// Message template
 	FieldFactory.createMessageTemplateField(ModelType.LLM, 'chatCompletion'),
